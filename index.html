@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Конструктор регулярных выражений</title>
+    <style>
+        body {
+            background: radial-gradient(circle at center, rgba(9,35,48,1) 0%, #1d876a 100%);
+            font-family: "Inter", sans-serif;
+            color: #fff;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            background: rgba(255,255,255,0.06);
+            backdrop-filter: blur(18px);
+            border-radius: 26px;
+            padding: 40px;
+            box-shadow: 0 0 40px rgba(0,0,0,0.28);
+            border: 1px solid rgba(255,255,255,0.12);
+        }
+
+        textarea {
+            width: 100%;
+            margin-top: 8px;
+            background: rgba(255,255,255,0.10);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #fff;
+            border-radius: 10px;
+            padding: 12px 14px;
+            font-size: 14px;
+            height: 140px;
+            resize: vertical;
+        }
+
+        button {
+            background: linear-gradient(90deg, #1b8e73 0%, #42b98d 100%);
+            padding: 12px 20px;
+            color: #fff;
+            font-size: 15px;
+            font-weight: 600;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            transition: 0.2s ease;
+        }
+
+        button:hover {
+            opacity: 0.85;
+        }
+
+        /* Блок результата */
+        .result-wrapper {
+            margin-top: 25px;
+        }
+
+        /* Кнопка копирования - всегда сверху своей строки */
+        .copy-btn {
+            display: inline-block;
+            margin-bottom: 10px;
+            background: rgba(255,255,255,0.18);
+            border: 1px solid rgba(255,255,255,0.28);
+            border-radius: 10px;
+            padding: 6px 12px;
+            font-size: 13px;
+            cursor: pointer;
+            color: #fff;
+            backdrop-filter: blur(6px);
+            transition: 0.2s ease;
+        }
+
+        .copy-btn:hover {
+            background: rgba(255,255,255,0.28);
+        }
+
+        .copy-btn.copied {
+            background: #42b98d;
+            border-color: #42b98d;
+        }
+
+        .result-block {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.25);
+            border-radius: 12px;
+            padding: 18px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+            font-size: 16px;
+        }
+
+        .section-divider {
+            border: none;
+            border-top: 1px solid rgba(255,255,255,0.2);
+            margin: 30px 0;
+        }
+
+        .info-box {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 10px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            transition: 0.2s ease;
+        }
+
+        .mode-btn.active {
+            background: rgba(66,185,141,0.3);
+            border-color: #42b98d;
+        }
+
+        .mode-btn:hover {
+            background: rgba(255,255,255,0.15);
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Конструктор регулярных выражений</h1>
+
+    <div class="mode-selector">
+        <div class="mode-btn active" onclick="switchMode('domains')">Таргет на домены</div>
+        <div class="mode-btn" onclick="switchMode('keywords')">Таргет по ключевым словам</div>
+        <div class="mode-btn" onclick="switchMode('masks')">Маски доменов</div>
+    </div>
+
+    <!-- Режим: Таргет на домены -->
+    <div id="mode-domains">
+        <h2>Список доменов</h2>
+        <textarea id="domains" placeholder="example-one.ru&#10;example-two.ru&#10;example-three.ru&#10;example-four.ru" autocomplete="off"></textarea>
+    </div>
+
+    <!-- Режим: Таргет по ключевым словам -->
+    <div id="mode-keywords" class="hidden">
+        <h2>Ключевые слова в URL</h2>
+        <textarea id="keywords" placeholder="keyword-one&#10;keyword-two&#10;keyword-three" autocomplete="off"></textarea>
+    </div>
+
+    <!-- Режим: Маски доменов -->
+    <div id="mode-masks" class="hidden">
+        <h2>Список доменов для масок</h2>
+        <div class="info-box">
+            <strong>Генерация масок:</strong><br>
+            Введите список доменов и выберите формат маски
+        </div>
+        <textarea id="masks" placeholder="my-fake-site.com&#10;another-fake.org&#10;test-domain.net&#10;sample-site.io" autocomplete="off"></textarea>
+        <div style="margin-top: 15px;">
+            <strong>Формат маски:</strong>
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 12px 15px; transition: 0.2s ease;" onmouseover="this.style.borderColor='rgba(66,185,141,0.5)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.2)'">
+                    <input type="radio" name="mask-format" value="name" checked style="cursor: pointer;" />
+                    <code style="background: rgba(255,255,255,0.15); padding: 3px 8px; border-radius: 4px; font-size: 14px;">.*mydomain.*</code>
+                    <span>- Только имя</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 12px 15px; transition: 0.2s ease;" onmouseover="this.style.borderColor='rgba(66,185,141,0.5)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.2)'">
+                    <input type="radio" name="mask-format" value="full" style="cursor: pointer;" />
+                    <code style="background: rgba(255,255,255,0.15); padding: 3px 8px; border-radius: 4px; font-size: 14px;">.*mydomain.com.*</code>
+                    <span>- Имя и доменная зона</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 12px 15px; transition: 0.2s ease;" onmouseover="this.style.borderColor='rgba(66,185,141,0.5)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.2)'">
+                    <input type="radio" name="mask-format" value="tld" style="cursor: pointer;" />
+                    <code style="background: rgba(255,255,255,0.15); padding: 3px 8px; border-radius: 4px; font-size: 14px;">.*mydomain.*com.*</code>
+                    <span>- Имя + произвольное продолжение + доменная зона</span>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <button style="width:100%; margin-top:25px;" onclick="generate()">Сгенерировать</button>
+
+    <div id="result"></div>
+</div>
+
+<script>
+window.onload = function() {
+    document.getElementById("domains").value = "";
+    document.getElementById("keywords").value = "";
+    document.getElementById("masks").value = "";
+};
+
+let currentMode = 'domains';
+
+function switchMode(mode) {
+    currentMode = mode;
+    
+    // Update mode buttons
+    document.querySelectorAll('.mode-btn').forEach((btn, index) => {
+        btn.classList.remove('active');
+        if ((mode === 'domains' && index === 0) ||
+            (mode === 'keywords' && index === 1) ||
+            (mode === 'masks' && index === 2)) {
+            btn.classList.add('active');
+        }
+    });
+    
+    // Show/hide sections
+    document.getElementById('mode-domains').classList.toggle('hidden', mode !== 'domains');
+    document.getElementById('mode-keywords').classList.toggle('hidden', mode !== 'keywords');
+    document.getElementById('mode-masks').classList.toggle('hidden', mode !== 'masks');
+    
+    // Clear previous results
+    document.getElementById('result').innerHTML = '';
+}
+
+function normalize(text) {
+    return text
+        .replace(/,/g, "\n")
+        .split(/\n|\s+/)
+        .map(x => x.trim())
+        .filter(x => x.length > 0);
+}
+
+function isDomain(value) {
+    return /^[a-zA-Z0-9._-]+\.[a-zA-Z]{2,}$/.test(value);
+}
+
+function escapeDomain(d) {
+    return d.replace(/\./g, "\\.");
+}
+
+function escapeKeyword(k) {
+    return k.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
+}
+
+function copyText(id, btn) {
+    const text = document.getElementById(id).innerText;
+    navigator.clipboard.writeText(text);
+
+    btn.classList.add("copied");
+    btn.innerText = "Скопировано!";
+    setTimeout(() => {
+        btn.classList.remove("copied");
+        btn.innerText = "Копировать";
+    }, 1200);
+}
+
+function generate() {
+    let html = "";
+
+    if (currentMode === 'domains') {
+        const rawDomains = normalize(document.getElementById("domains").value);
+        const domains = rawDomains.filter(isDomain);
+
+        if (domains.length > 0) {
+            const esc = domains.map(escapeDomain).join("|");
+            const pattern = `^http[s]?:\\/\\/(.*\\.)*(${esc})`;
+
+            html += `
+            <h2>Таргет на домены</h2>
+            <div class="result-wrapper">
+                <button class="copy-btn" onclick="copyText('dom-target', this)">Копировать</button>
+                <div class="result-block" id="dom-target">${pattern}</div>
+            </div>
+            `;
+        }
+    } else if (currentMode === 'keywords') {
+        const rawKeywords = normalize(document.getElementById("keywords").value);
+        const keywords = rawKeywords.filter(k => !isDomain(k));
+
+        if (keywords.length > 0) {
+            const esc = keywords.map(escapeKeyword).join("|");
+            const pattern = `.*(${esc}).*`;
+
+            html += `
+            <h2>Таргет по ключевым словам</h2>
+            <div class="result-wrapper">
+                <button class="copy-btn" onclick="copyText('kw-target', this)">Копировать</button>
+                <div class="result-block" id="kw-target">${pattern}</div>
+            </div>
+            `;
+        }
+    } else if (currentMode === 'masks') {
+        const rawMasks = normalize(document.getElementById("masks").value);
+        const format = document.querySelector('input[name="mask-format"]:checked').value;
+
+        if (rawMasks.length > 0) {
+            const masks = [];
+
+            rawMasks.forEach(domain => {
+                if (isDomain(domain)) {
+                    const parts = domain.split(".");
+                    const name = parts.slice(0, -1).join(".");
+                    const tld = parts[parts.length - 1];
+
+                    if (format === "name") {
+                        masks.push(`.*${name}.*`);
+                    } else if (format === "full") {
+                        masks.push(`.*${domain}.*`);
+                    } else {
+                        masks.push(`.*${name}.*${tld}.*`);
+                    }
+                } else {
+                    masks.push(`.*${domain}.*`);
+                }
+            });
+
+            const pattern = masks.join("\n");
+
+            html += `
+            <h2>Маски доменов</h2>
+            <div class="result-wrapper">
+                <button class="copy-btn" onclick="copyText('mask-target', this)">Копировать</button>
+                <div class="result-block" id="mask-target">${pattern}</div>
+            </div>
+            `;
+        }
+    }
+
+    document.getElementById("result").innerHTML =
+        html || "<h2>Введите данные</h2>";
+}
+</script>
+
+</body>
+</html>
