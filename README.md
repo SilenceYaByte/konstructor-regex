@@ -106,10 +106,9 @@ another-fake.org
 
 ## 🚀 Запуск
 
-1. Скачайте файл `index.html`
-2. Откройте в браузере
+**[Открыть онлайн](https://silenceyabyte.github.io/konstructor-regex/)**
 
-Или используйте онлайн-версию через GitHub Pages.
+Или скачайте файл `index.html` и откройте в браузере.
 
 ---
 
