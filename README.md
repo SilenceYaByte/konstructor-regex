@@ -111,8 +111,6 @@ another-fake.org
 ```
 konstructor-regex/
 ├── index.html          # Основной файл
-├── docs/
-│   └── screenshots/    # Скриншоты
 ├── .gitignore
 ├── LICENSE
 └── README.md
